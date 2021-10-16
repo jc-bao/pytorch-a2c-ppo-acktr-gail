@@ -78,14 +78,19 @@ class DiagGaussian(nn.Module):
         super(DiagGaussian, self).__init__()
 
         init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
-                               constant_(x, 0))
+                               constant_(x, 0)) # [FIX] , gain = 0.01
 
-        self.fc_mean = init_(nn.Linear(num_inputs, num_outputs))
+        # self.fc_mean = init_(nn.Linear(num_inputs, num_outputs))
+        print('[DEBUG] network init!!!')
+        self.fc_mean = nn.Sequential(
+            init_(nn.Linear(num_inputs, num_outputs)), 
+            nn.Tanh()
+        )# [FIX] add tanh
         self.logstd = AddBias(torch.zeros(num_outputs))
 
     def forward(self, x):
         action_mean = self.fc_mean(x)
-
+        print('[DEBUG]in=',x ,'out=', action_mean)
         #  An ugly hack for my KFAC implementation.
         zeros = torch.zeros(action_mean.size())
         if x.is_cuda:

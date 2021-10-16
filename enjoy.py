@@ -21,11 +21,11 @@ parser.add_argument(
     help='log interval, one log per n updates (default: 10)')
 parser.add_argument(
     '--env-name',
-    default='PongNoFrameskip-v4',
+    default='XarmPDHandoverNoGoal-v1', #  XarmReach-v1
     help='environment to train on (default: PongNoFrameskip-v4)')
 parser.add_argument(
     '--load-dir',
-    default='./trained_models/',
+    default='./trained_models/tanh',
     help='directory to save agent logs (default: ./trained_models/)')
 parser.add_argument(
     '--non-det',
@@ -64,8 +64,8 @@ masks = torch.zeros(1, 1)
 
 obs = env.reset()
 
-if render_func is not None:
-    render_func('human')
+# if render_func is not None:
+#     render_func('human')
 
 if args.env_name.find('Bullet') > -1:
     import pybullet as p
@@ -81,6 +81,7 @@ while True:
             obs, recurrent_hidden_states, masks, deterministic=args.det)
 
     # Obser reward and next obs
+    print('[DEBUG]action=',action)
     obs, reward, done, _ = env.step(action)
 
     masks.fill_(0.0 if done else 1.0)
@@ -92,5 +93,5 @@ while True:
             humanPos, humanOrn = p.getBasePositionAndOrientation(torsoId)
             p.resetDebugVisualizerCamera(distance, yaw, -20, humanPos)
 
-    if render_func is not None:
-        render_func('human')
+    # if render_func is not None:
+    #     render_func('human')
