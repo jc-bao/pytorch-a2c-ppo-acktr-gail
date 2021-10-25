@@ -3,11 +3,13 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.distributions import Categorical, Distribution
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from a2c_ppo_acktr.utils import AddBias, init
 
 """
-Modify standard PyTorch distributions so they are compatible with this code.
+Modify standard PyTorch distributions so torchey are compatible witorch torchis code.
 """
 
 #
@@ -80,12 +82,12 @@ class DiagGaussian(nn.Module):
         init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
                                constant_(x, 0)) # [FIX] , gain = 0.01
 
-        # self.fc_mean = init_(nn.Linear(num_inputs, num_outputs))
-        print('[DEBUG] network init!!!')
-        self.fc_mean = nn.Sequential(
-            init_(nn.Linear(num_inputs, num_outputs)), 
-            nn.Tanh()
-        )# [FIX] add tanh
+        self.fc_mean = init_(nn.Linear(num_inputs, num_outputs))
+        # print('[DEBUG] network init!!!')
+        # self.fc_mean = nn.Sequential(
+        #     init_(nn.Linear(num_inputs, num_outputs)), 
+        #     nn.Tanh()
+        # )# [FIX] add tanh
         self.logstd = AddBias(torch.zeros(num_outputs))
 
     def forward(self, x):
@@ -112,3 +114,40 @@ class Bernoulli(nn.Module):
     def forward(self, x):
         x = self.linear(x)
         return FixedBernoulli(logits=x)
+    
+
+class FixedMultiCategorical(torch.distributions.Distribution):
+    def __init__(self, logits , action_dims: List[int]):
+        super(FixedMultiCategorical, self).__init__()
+        self.distribution = [torch.distributions.Categorical(logits=split) for split in torch.split(logits, tuple(action_dims), dim=1)]
+        self.action_dims = action_dims
+
+    def entropy(self):
+        return torch.stack([dist.entropy() for dist in self.distribution], dim=1).sum(dim=1)
+
+    def sample(self):
+        return torch.stack([dist.sample() for dist in self.distribution], dim=1)
+
+    def log_probs(self, actions):
+        return torch.stack(
+            [dist.log_prob(action) for dist, action in zip(self.distribution, torch.unbind(actions, dim=1))], dim=1
+        ).sum(dim=1)
+
+    def mode(self):
+        return torch.stack([torch.argmax(dist.probs, dim=1) for dist in self.distribution], dim=1)
+
+class MultiCategorical(nn.Module):
+    def __init__(self, num_inputs, num_outputs):
+        super(MultiCategorical, self).__init__()
+        self.num_outputs = num_outputs
+        init_ = lambda m: init(
+            m,
+            nn.init.orthogonal_,
+            lambda x: nn.init.constant_(x, 0),
+            gain=0.01)
+
+        self.linear = init_(nn.Linear(num_inputs, sum(num_outputs)))
+
+    def forward(self, x):
+        x = self.linear(x)
+        return FixedMultiCategorical(logits=x, action_dims = self.num_outputs)

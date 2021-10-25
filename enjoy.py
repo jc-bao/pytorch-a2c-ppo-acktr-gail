@@ -21,11 +21,11 @@ parser.add_argument(
     help='log interval, one log per n updates (default: 10)')
 parser.add_argument(
     '--env-name',
-    default='XarmPDHandoverNoGoal-v1', #  XarmReach-v1
+    default='XarmPDPickAndPlace-v1', #  XarmReach-v1
     help='environment to train on (default: PongNoFrameskip-v4)')
 parser.add_argument(
     '--load-dir',
-    default='./trained_models/tanh',
+    default='./trained_models/fix_done_disc_sparse',
     help='directory to save agent logs (default: ./trained_models/)')
 parser.add_argument(
     '--non-det',

@@ -44,7 +44,7 @@ def make_env(env_id, seed, rank, log_dir, allow_early_resets):
             env = dmc2gym.make(domain_name=domain, task_name=task)
             env = ClipAction(env)
         else:
-            env = gym.make(env_id)
+            env = gym.make(env_id, render = True) # [FIX]
 
         is_atari = hasattr(gym.envs, 'atari') and isinstance(
             env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
@@ -61,7 +61,6 @@ def make_env(env_id, seed, rank, log_dir, allow_early_resets):
             env = Monitor(env,
                           os.path.join(log_dir, str(rank)),
                           allow_early_resets=allow_early_resets)
-
         if is_atari:
             if len(env.observation_space.shape) == 3:
                 env = EpisodicLifeEnv(env)
