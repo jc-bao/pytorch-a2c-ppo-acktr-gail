@@ -129,9 +129,13 @@ class FixedMultiCategorical(torch.distributions.Distribution):
         return torch.stack([dist.sample() for dist in self.distribution], dim=1)
 
     def log_probs(self, actions):
-        return torch.stack(
-            [dist.log_prob(action) for dist, action in zip(self.distribution, torch.unbind(actions, dim=1))], dim=1
-        ).sum(dim=1)
+        log = torch.stack([dist.log_prob(action) for dist, action in zip(self.distribution, torch.unbind(actions.squeeze(-1), dim=1))], dim=1).sum(dim=1)
+        return (
+            log
+            .view(actions.size(0), -1)
+            .sum(-1)
+            .unsqueeze(-1)
+        )
 
     def mode(self):
         return torch.stack([torch.argmax(dist.probs, dim=1) for dist in self.distribution], dim=1)
