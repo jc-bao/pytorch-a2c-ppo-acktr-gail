@@ -44,7 +44,14 @@ def make_env(env_id, seed, rank, log_dir, allow_early_resets):
             env = dmc2gym.make(domain_name=domain, task_name=task)
             env = ClipAction(env)
         else:
-            env = gym.make(env_id, render = False) # [FIX]
+            config = {
+                'init_grasp_rate': 0.5, 
+                'goal_ground_rate': 0.5, 
+                'grasp_mode': 'easy', 
+                'reward_type': 'sparse', 
+                'action_type': 'multi_discrete' 
+            }
+            env = gym.make(env_id, config = config)# [FIX]
 
         is_atari = hasattr(gym.envs, 'atari') and isinstance(
             env.unwrapped, gym.envs.atari.atari_env.AtariEnv)

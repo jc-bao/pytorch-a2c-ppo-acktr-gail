@@ -1,0 +1,1 @@
+python main.py --log-dir './logs/pac_sparse_disc' --save-dir './trained_models/pac_sparse_disc'
